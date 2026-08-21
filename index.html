@@ -801,25 +801,63 @@
   });
 
   // ============ DOWNLOAD ============
-  function downloadFile(f){
-    const url = 'https://drive.google.com/uc?export=download&id=' + f.FileID;
-    window.open(url, '_blank');
+  async function downloadFile(f){
+    try{
+      showToast('Download taiyar ho raha hai...');
+      const data = await apiCall('download', { fileId: f.FileID });
+      const byteChars = atob(data.fileData);
+      const byteNumbers = new Array(byteChars.length);
+      for(let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: data.mimeType || 'application/octet-stream' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = data.fileName || f.FileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 4000);
+    }catch(err){
+      showToast('Download fail: ' + err.message, true);
+    }
   }
 
   // ============ SHARE ============
   async function shareFileAction(f){
     try{
-      showToast('Share link taiyar ho raha hai...');
-      const data = await apiCall('share', { fileId: f.FileID });
-      const link = data.link;
+      showToast('Taiyar ho raha hai...');
+
+      // Try sharing the actual FILE itself (not a link) via the native share sheet.
+      // Supported on most Android Chrome browsers and some iOS browsers.
+      const data = await apiCall('download', { fileId: f.FileID });
+      const byteChars = atob(data.fileData);
+      const byteNumbers = new Array(byteChars.length);
+      for(let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const fileObj = new File([byteArray], data.fileName || f.FileName, { type: data.mimeType || 'application/octet-stream' });
+
+      if(navigator.canShare && navigator.canShare({ files: [fileObj] })){
+        try{
+          await navigator.share({ files: [fileObj], title: f.FileName });
+          return;
+        }catch(e){
+          if(e.name === 'AbortError') return; // user cancelled the share sheet, do nothing
+          // otherwise fall through to link-based sharing below
+        }
+      }
+
+      // Fallback: device/browser can't share raw files -> share a view-only link instead
+      const linkData = await apiCall('share', { fileId: f.FileID });
+      const link = linkData.link;
       if(navigator.share){
         try{
           await navigator.share({ title: f.FileName, text: 'Dekho: ' + f.FileName, url: link });
           return;
-        }catch(e){ /* user cancelled share sheet, fall through to clipboard */ }
+        }catch(e){ /* cancelled */ }
       }
       await navigator.clipboard.writeText(link);
-      showToast('Link copy ho gaya — WhatsApp me paste kar do 📋');
+      showToast('Is device par file directly share nahi ho sakti — link copy ho gaya 📋');
     }catch(err){
       showToast('Share fail: ' + err.message, true);
     }
