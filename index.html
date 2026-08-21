@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -312,7 +312,7 @@
       </div>
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="searchInput" placeholder="Apni files search karo...">
+        <input type="text" id="searchInput" placeholder="Search your files...">
       </div>
       <div class="topbar-actions">
         <button class="btn btn-primary" id="uploadBtn">
@@ -344,8 +344,8 @@
       <div id="loadingState" style="text-align:center; padding:60px;"><div class="spin dark" style="margin:0 auto;"></div></div>
       <div id="emptyState" class="empty-state" style="display:none;">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-        <h3 id="emptyTitle">Abhi koi file nahi hai</h3>
-        <p>Upload button dabaakar apni pehli file add karo.</p>
+        <h3 id="emptyTitle">No files yet</h3>
+        <p>Tap Upload to add your first file.</p>
       </div>
       <div id="fileGrid" class="file-grid"></div>
     </main>
@@ -381,7 +381,7 @@
 <!-- UPLOAD MODAL -->
 <div class="overlay" id="uploadOverlay" style="display:none;">
   <div class="modal">
-    <h2>Nayi File Upload Karo</h2>
+    <h2>Upload New File</h2>
     <input type="file" id="fileInput" class="visually-hidden">
     <div class="dropzone" id="dropzone">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>
@@ -394,7 +394,7 @@
     </div>
     <div class="field">
       <label for="descInput">Description <span style="font-weight:400; color:var(--muted);">(optional)</span></label>
-      <textarea id="descInput" rows="2" placeholder="Kuch note likhna ho to..."></textarea>
+      <textarea id="descInput" rows="2" placeholder="Add a note if you'd like..."></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="cancelUploadBtn">Cancel</button>
@@ -406,7 +406,7 @@
 <!-- EDIT MODAL -->
 <div class="overlay" id="editOverlay" style="display:none;">
   <div class="modal">
-    <h2>Details Edit Karo</h2>
+    <h2>Edit Details</h2>
     <div class="field">
       <label for="editTitleInput">Title</label>
       <input type="text" id="editTitleInput">
@@ -523,7 +523,7 @@
         mainScreen.style.display = 'flex';
         loadFiles();
       } else {
-        $('loginError').textContent = 'Galat password. Dobara try karo.';
+        $('loginError').textContent = 'Incorrect password. Please try again.';
       }
     }catch(err){
       $('loginError').textContent = 'Connection error: ' + err.message;
@@ -544,7 +544,7 @@
       renderCounts();
       renderFiles();
     }catch(err){
-      showToast('Files load nahi ho payi: ' + err.message, true);
+      showToast('Could not load files: ' + err.message, true);
     }finally{
       $('loadingState').style.display = 'none';
     }
@@ -574,7 +574,7 @@
     if(list.length === 0){
       grid.style.display = 'none';
       $('emptyState').style.display = 'block';
-      $('emptyTitle').textContent = files.length === 0 ? 'Abhi koi file nahi hai' : 'Kuch nahi mila';
+      $('emptyTitle').textContent = files.length === 0 ? 'No files yet' : 'Nothing found';
       return;
     }
     $('emptyState').style.display = 'none';
@@ -714,7 +714,7 @@
   }
 
   $('submitUploadBtn').addEventListener('click', async () => {
-    if(!selectedFileObj){ showToast('Pehle ek file choose karo', true); return; }
+    if(!selectedFileObj){ showToast('Please choose a file first', true); return; }
     const title = $('titleInput').value.trim() || selectedFileObj.name;
     const desc = $('descInput').value.trim();
     const btn = $('submitUploadBtn'); const label = $('uploadBtnLabel');
@@ -729,11 +729,11 @@
         fileName: title,
         description: desc
       });
-      showToast('File upload ho gayi ✅');
+      showToast('File uploaded ✅');
       $('uploadOverlay').style.display = 'none';
       loadFiles();
     }catch(err){
-      showToast('Upload fail: ' + err.message, true);
+      showToast('Upload failed: ' + err.message, true);
     }finally{
       label.textContent = 'Save';
       btn.disabled = false;
@@ -755,17 +755,17 @@
     if(!editingFile) return;
     const newName = $('editTitleInput').value.trim();
     const newDesc = $('editDescInput').value.trim();
-    if(!newName){ showToast('Title khali nahi ho sakta', true); return; }
+    if(!newName){ showToast('Title cannot be empty', true); return; }
     const btn = $('saveEditBtn'); const label = $('editBtnLabel');
     label.innerHTML = '<span class="spin"></span>';
     btn.disabled = true;
     try{
       await apiCall('update', { fileId: editingFile.FileID, fileName: newName, description: newDesc });
-      showToast('Details update ho gayi ✅');
+      showToast('Details updated ✅');
       $('editOverlay').style.display = 'none';
       loadFiles();
     }catch(err){
-      showToast('Update fail: ' + err.message, true);
+      showToast('Update failed: ' + err.message, true);
     }finally{
       label.textContent = 'Save Changes';
       btn.disabled = false;
@@ -776,7 +776,7 @@
   let deletingFile = null;
   function openDeleteConfirm(f){
     deletingFile = f;
-    $('deleteFileName').textContent = '"' + f.FileName + '" hamesha ke liye delete ho jayegi.';
+    $('deleteFileName').textContent = '"' + f.FileName + '" will be permanently deleted.';
     $('deleteOverlay').style.display = 'flex';
   }
   $('cancelDeleteBtn').addEventListener('click', () => $('deleteOverlay').style.display = 'none');
@@ -789,11 +789,11 @@
     btn.disabled = true;
     try{
       await apiCall('delete', { fileId: deletingFile.FileID });
-      showToast('File delete ho gayi');
+      showToast('File deleted');
       $('deleteOverlay').style.display = 'none';
       loadFiles();
     }catch(err){
-      showToast('Delete fail: ' + err.message, true);
+      showToast('Delete failed: ' + err.message, true);
     }finally{
       label.textContent = 'Delete';
       btn.disabled = false;
@@ -803,7 +803,7 @@
   // ============ DOWNLOAD ============
   async function downloadFile(f){
     try{
-      showToast('Download taiyar ho raha hai...');
+      showToast('Preparing download...');
       const data = await apiCall('download', { fileId: f.FileID });
       const byteChars = atob(data.fileData);
       const byteNumbers = new Array(byteChars.length);
@@ -819,14 +819,14 @@
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(blobUrl), 4000);
     }catch(err){
-      showToast('Download fail: ' + err.message, true);
+      showToast('Download failed: ' + err.message, true);
     }
   }
 
   // ============ SHARE ============
   async function shareFileAction(f){
     try{
-      showToast('Taiyar ho raha hai...');
+      showToast('Preparing...');
 
       // Try sharing the actual FILE itself (not a link) via the native share sheet.
       // Supported on most Android Chrome browsers and some iOS browsers.
@@ -852,14 +852,14 @@
       const link = linkData.link;
       if(navigator.share){
         try{
-          await navigator.share({ title: f.FileName, text: 'Dekho: ' + f.FileName, url: link });
+          await navigator.share({ title: f.FileName, text: 'Check this out: ' + f.FileName, url: link });
           return;
         }catch(e){ /* cancelled */ }
       }
       await navigator.clipboard.writeText(link);
-      showToast('Is device par file directly share nahi ho sakti — link copy ho gaya 📋');
+      showToast('This device can\'t share the file directly — link copied instead 📋');
     }catch(err){
-      showToast('Share fail: ' + err.message, true);
+      showToast('Share failed: ' + err.message, true);
     }
   }
 
@@ -875,7 +875,7 @@
     } else {
       frame.innerHTML = `<div class="detail-fallback">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-        <p>Is file type ka preview yaha available nahi hai.<br>Download button se file khol sakte ho.</p>
+        <p>Preview isn't available for this file type.<br>Use the Download button to open it.</p>
       </div>`;
     }
   }
